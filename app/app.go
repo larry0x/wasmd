@@ -531,7 +531,23 @@ func NewWasmApp(
 	// if we want to allow any custom callbacks
 	// See https://github.com/CosmWasm/cosmwasm/blob/main/docs/CAPABILITIES-BUILT-IN.md
 	availableCapabilities := "iterator,staking,stargate,cosmwasm_1_1,cosmwasm_1_2,token_factory"
-	wasmOpts = append(bindings.RegisterCustomPlugins(&app.BankKeeper, &app.TokenFactoryKeeper), wasmOpts...)
+
+	// add tokenfactory bindings
+	tfOpts := bindings.RegisterCustomPlugins(&app.BankKeeper, &app.TokenFactoryKeeper)
+	wasmOpts = append(wasmOpts, tfOpts...)
+
+	// whitelist tokenfactory-related Stargate queries
+	accepted := wasmkeeper.AcceptedStargateQueries{
+		"/osmosis.tokenfactory.v1beta1.Query/Params":                 &tokenfactorytypes.QueryParamsResponse{},
+		"/osmosis.tokenfactory.v1beta1.Query/DenomAuthorityMetadata": &tokenfactorytypes.QueryDenomAuthorityMetadataResponse{},
+		"/osmosis.tokenfactory.v1beta1.Query/DenomsFromCreator":      &tokenfactorytypes.QueryDenomsFromCreatorResponse{},
+	}
+	querierOpts := wasmkeeper.WithQueryPlugins(
+		&wasmkeeper.QueryPlugins{
+			Stargate: wasmkeeper.AcceptListStargateQuerier(accepted, bApp.GRPCQueryRouter(), appCodec),
+		},
+	)
+	wasmOpts = append(wasmOpts, querierOpts)
 
 	app.WasmKeeper = wasm.NewKeeper(
 		appCodec,
