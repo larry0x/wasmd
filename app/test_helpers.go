@@ -377,7 +377,7 @@ func SignAndDeliver(
 		txCfg,
 		msgs,
 		sdk.Coins{sdk.NewInt64Coin(sdk.DefaultBondDenom, 0)},
-		2*DefaultGas,
+		10*DefaultGas,
 		chainID,
 		accNums,
 		accSeqs,
