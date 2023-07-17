@@ -113,7 +113,7 @@ func (chain *TestChain) SmartQuery(contractAddr string, queryMsg interface{}, re
 	})
 
 	if res.Code != 0 {
-		return fmt.Errorf("query failed: (%d) %s", res.Code, res.Log)
+		return fmt.Errorf("smart query failed: (%d) %s", res.Code, res.Log)
 	}
 
 	// unpack protobuf
@@ -124,6 +124,35 @@ func (chain *TestChain) SmartQuery(contractAddr string, queryMsg interface{}, re
 	}
 	// unpack json content
 	return json.Unmarshal(resp.Data, response)
+}
+
+func (chain *TestChain) RawQuery(contractAddr string, queryData []byte) ([]byte, error) {
+	req := types.QueryRawContractStateRequest{
+		Address:   contractAddr,
+		QueryData: queryData,
+	}
+	reqBin, err := proto.Marshal(&req)
+	if err != nil {
+		return nil, err
+	}
+
+	res := chain.App.Query(abci.RequestQuery{
+		Path: "/cosmwasm.wasm.v1.Query/RawContractState",
+		Data: reqBin,
+	})
+
+	if res.Code != 0 {
+		return nil, fmt.Errorf("raw query failed: (%d) %s", res.Code, res.Log)
+	}
+
+	// unpack protobuf
+	var resp types.QueryRawContractStateResponse
+	err = proto.Unmarshal(res.Value, &resp)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Data, nil
 }
 
 func (chain *TestChain) parseSDKResultData(r *sdk.Result) sdk.TxMsgData {
