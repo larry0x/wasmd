@@ -67,6 +67,9 @@ func (q QueryHandler) Query(request wasmvmtypes.QueryRequest, gasLimit uint64) (
 		err = wasmvmErr.ToWasmVMError()
 	}
 
+	// print the unredated error to CLI, for the purpose of contract debugging
+	moduleLogger(q.Ctx).Error("Redacting querier error", "cause", err)
+
 	// Issue #759 - we don't return error string for worries of non-determinism
 	return nil, redactError(err)
 }
